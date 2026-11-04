@@ -1,0 +1,491 @@
+print("AI-powered vacuum cleaner")
+print()
+
+environment = {
+        "A":"Dirty",
+        "B":"Dirty",
+        }
+
+location = "A"
+
+def vac(location, status):
+    if status == "Dirty":
+        return "Suck"
+    elif location == "A":
+        return "Move right"
+    elif location == "B":
+        return "Move left"
+    else:
+        pass
+
+
+
+step = 0
+
+while "Dirty" in environment.values():
+    step += 1
+    print("Step: ", step)
+    print("Location: ", location)
+    print(environment)
+
+    action = vac(location, environment[location])
+
+    print("Action:", action)
+
+    if action == "Move left":
+        location = "A"
+    elif action == "Move right":
+        location = "B"
+    else: 
+        environment[location] = "Clean"
+
+    print(environment)
+    print()
+
+import heapq
+
+goal = (
+        (1,2,3),
+        (4,5,6),
+        (7,8,0),
+        )
+
+def find_zero(state):
+    for row in range(3):
+        for col in range(3):
+            if state[row][col] == 0:
+                return row, col
+
+def neighbours(state):
+    # get zero state and find its neighbours
+    r, c = find_zero(state)
+    moves = ((-1, 0), (1, 0), (0, -1), (0, 1))
+    neighbours = []
+
+    for dr, dc in moves:
+        nr, nc = r + dr, c + dc
+
+        if 0 <= nr < 3 and 0 <= nc < 3:
+            new_state = [list(row) for row in state]
+            new_state[r][c], new_state[nr][nc] = new_state[nr][nc], new_state[r][c]
+            neighbours.append(tuple(tuple(row) for row in new_state))
+
+    return neighbours
+
+def heuristic(state):
+    distance = 0
+    for row in range(3):
+        for col in range(3):
+            if state[row][col] != 0:
+                goal_r = (state[row][col] - 1) // 3
+                goal_c = (state[row][col] - 1) % 3
+                distance += abs(row - goal_r) + abs(col - goal_c)
+    return distance
+    
+def a_star(start):
+    open_list = []
+    # push the start tuple
+    # and another tuple of heuristic score, 0 g score, start config, and path
+    heapq.heappush(open_list, (heuristic(start), 0, start, []))
+    visited = set()
+
+    # while heap exists
+    while open_list:
+        # unpack this 
+        f, g, state, path = heapq.heappop(open_list)
+
+        # if visited then continue
+        if state in visited:
+            continue
+
+        # if not visited then add and update current_path
+        visited.add(state)
+        current_path = path + [state]
+
+        # if its the goal then return current path
+        if state == goal:
+            return current_path
+
+        # if neighbour is not visited then
+        # push into the heap, with g+1 steps
+        for neighbour in neighbours(state):
+            if neighbour not in visited:
+                heapq.heappush(
+                        open_list,
+                        (
+                            g + 1 + heuristic(neighbour),
+                            g + 1,
+                            neighbour,
+                            current_path,
+                            )
+                        )
+    return None
+
+def main():
+    start = (
+            (1,2,3),
+            (4,0,6),
+            (7,5,8)
+            )
+    solution = a_star(start)
+
+    if solution:
+        print("Solution found")
+        print("Number of moves ", len(solution) - 1)
+
+        for step, state in enumerate(solution):
+            print("Steps: ", step)
+            for row in state:
+                print(row)
+    else:
+        print("No solution found")
+
+
+
+    pass
+
+if __name__ == "__main__":
+    main()
+import random
+
+# Distance matrix between 5 cities
+distance = [
+    [0, 10, 15, 20, 25],
+    [10, 0, 35, 25, 30],
+    [15, 35, 0, 30, 20],
+    [20, 25, 30, 0, 15],
+    [25, 30, 20, 15, 0]
+]
+cities = 5
+
+# Calculate total distance of a route
+def route_cost(route):
+    cost = 0
+    # Distance between consecutive cities
+    for i in range(len(route) - 1):
+        cost += distance[route[i]][route[i + 1]]
+    # Return to starting city
+    cost += distance[route[-1]][route[0]]
+    return cost
+
+# Generate neighboring routes
+def get_neighbors(route):
+    neighbors = []
+    # Keep the first city fixed
+    for i in range(1, cities):
+        for j in range(i + 1, cities):
+            new_route = route[:]
+            # Swap two cities
+            new_route[i], new_route[j] = new_route[j], new_route[i]
+            neighbors.append(new_route)
+    return neighbors
+
+# Local Beam Search
+def local_beam_search(k=3, iterations=20):
+    # Create initial random routes
+    beam = []
+    for _ in range(k):
+        route = list(range(cities))
+        random.shuffle(route)
+        if route not in beam:
+            beam.append(route)
+    
+    # Perform beam search
+    for _ in range(iterations):
+        all_neighbors = []
+        # Generate neighbors for every route
+        for route in beam:
+            all_neighbors.extend(get_neighbors(route))
+        
+        # Sort routes according to their cost
+        all_neighbors.sort(key=route_cost)
+        
+        # Select best k routes
+        beam = all_neighbors[:k]
+    
+    # Find the best route
+    best_route = min(beam, key=route_cost)
+    best_cost = route_cost(best_route)
+    return best_route, best_cost
+
+# Run the algorithm
+best_route, best_cost = local_beam_search(k=3, iterations=20)
+
+# Convert city numbers to C1, C2, ...
+best_route_names = ["C" + str(city + 1) for city in best_route]
+
+print("Local Beam Search for TSP")
+print("--------------------------")
+print("Best Route:", " -> ".join(best_route_names), " -> " + best_route_names[0])
+print("Minimum Distance:", best_cost)
+print("Tower of Hanoi")
+
+def hanoi(n, src, target, aux):
+    if n == 0:
+        return
+    hanoi(n-1, src, aux, target)
+    print(f"Moving {n} from rod {src} to rod {target}")
+    hanoi(n-1, aux, target, src)
+
+def main():
+    hanoi(3, "a", "c", "b")
+
+if __name__ == "__main__":
+    main()
+
+# sta
+# sat
+# ats
+print("BFS pathfinding")
+
+from collections import deque
+
+def main():
+    grid = [
+    [6, 0, 1, 1, 1],
+    [1, 0, 1, 1, 1],
+    [1, 0, 0, 0, 1],
+    [1, 1, 1, 0, 1],
+    [1, 1, 1, 0, 9],
+            ]
+
+    start = (1, 1)
+    goal = (4, 4)
+
+    moves = ( (-1, 0), (1, 0), (0, -1), (0, 1) )
+
+    visited = { start }
+    q = deque( [ (start, [start]) ] )
+
+    while q:
+        pos, path = q.popleft()
+        
+        if pos == goal:
+            print("Shortest path found")
+            print(path)
+            break
+
+        r, c = pos
+        
+        for move in moves:
+            dr, dc = move
+            nr, nc = r + dr, c + dc
+
+            if (0 <= nr < len(grid)) and (0 <= nc < len(grid[0])) and (grid[nr][nc] != 1) and ((nr, nc) not in visited):
+                visited.add((nr, nc))
+                q.append(((nr, nc), path + [(nr, nc)]))
+
+    else:
+        print("No path to goal")
+
+
+if __name__ == "__main__":
+    main()
+print("Smart number guesser")
+
+low = int(input("Enter low: "))
+high = int(input("Enter high: "))
+attempt = 0
+
+print("Will start guessing now!")
+
+while low <= high:
+    attempt += 1
+
+    guess = (low + high) // 2
+
+    print("My guess: ", guess)
+    print("Is the number Low / Equal / High")
+    choice = input("L/E/H: ")
+
+    if choice == "L":
+        high = guess - 1
+    elif choice == "H":
+        low = guess + 1
+    else:
+        print("I win!")
+        print(f"I took {attempt} attempt(s) to guess your number!")
+        break
+
+
+
+
+
+print("Chatbot")
+print("Type bye to exit")
+
+
+def bot(response):
+    print(f"[Bot]: {response}")
+
+while True:
+    user_input = input("[You]: ").lower().strip()
+
+    if "hello" in user_input or "hi" in user_input:
+        bot("Hello")
+    elif "what is your name" in user_input or "who are you" in user_input:
+        bot("I am Niharika's chatbot!")
+    elif "course" in user_input:
+        bot("I can help you with course-related info")
+    elif "exit" in user_input or "bye" in user_input:
+        bot("Exiting")
+        break
+    else:
+        bot("Idk man, I'm not that smart")
+n = 8
+board = [-1] * 8
+
+def safe(row, col):
+    """
+    check if board[row] == col or abs(board[row] - col) == abs())
+    return false
+    else return true
+    """
+
+    for i in range(row):
+        if board[i] == col or abs(board[i] - col) == abs(i - row):
+            return False
+
+    return True
+
+
+def solve(row):
+    """
+    check if row is equal to n and return true if true
+    else loop over all the cols in the row and check them for safety
+    if safe then mark them
+    then check row+1, if safe then return true
+    else revert to -1
+    """
+    if row == n:
+        return True
+
+    for col in range(n):
+        if safe(row, col):
+            board[row] = col
+
+            if solve(row + 1):
+                return True
+
+        board[row] = -1
+
+def main():
+    """
+    first check if the 0th row is solvable
+    if board[row] == col then loop over rows and columns
+    and print "Q" or "."
+    """
+    if solve(0):
+        for row in range(n):
+            for col in range(n):
+                if board[row] == col: print("Q", end=" ")
+                else: print(".", end=" ")
+            print()
+
+if __name__ == "__main__":
+    main()
+import heapq
+
+goal = (
+        (1,2,3),
+        (4,5,6),
+        (7,8,0),
+        )
+
+def find_zero(state):
+    for row in range(3):
+        for col in range(3):
+            if state[row][col] == 0:
+                return row, col
+
+def neighbours(state):
+    # get zero state and find its neighbours
+    r, c = find_zero(state)
+    moves = ((-1, 0), (1, 0), (0, -1), (0, 1))
+    neighbours = []
+
+    for dr, dc in moves:
+        nr, nc = r + dr, c + dc
+
+        if 0 <= nr < 3 and 0 <= nc < 3:
+            new_state = [list(row) for row in state]
+            new_state[r][c], new_state[nr][nc] = new_state[nr][nc], new_state[r][c]
+            neighbours.append(tuple(tuple(row) for row in new_state))
+
+    return neighbours
+
+def heuristic(state):
+    distance = 0
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] != 0:
+                goal_x = (state[i][j] - 1) // 3
+                goal_y = (state[i][j] - 1) % 3
+                distance += abs(i - goal_x) + abs(j - goal_y)
+    return distance
+    
+def a_star(start):
+    open_list = []
+    # push the start tuple
+    # and another tuple of heuristic score, 0 g score, start config, and path
+    heapq.heappush(open_list, (heuristic(start), 0, start, []))
+    visited = set()
+
+    # while heap exists
+    while open_list:
+        # unpack this 
+        f, g, state, path = heapq.heappop(open_list)
+
+        # if visited then continue
+        if state in visited:
+            continue
+
+        # if not visited then add and update current_path
+        visited.add(state)
+        current_path = path + [state]
+
+        # if its the goal then return current path
+        if state == goal:
+            return current_path
+
+        # if neighbour is not visited then
+        # push into the heap, with g+1 steps
+        for neighbour in neighbours(state):
+            if neighbour not in visited:
+                heapq.heappush(
+                        open_list,
+                        (
+                            g + 1 + heuristic(neighbour),
+                            g + 1,
+                            neighbour,
+                            current_path,
+                            )
+                        )
+    return None
+
+def main():
+    start = (
+            (1,2,3),
+            (4,0,6),
+            (7,5,8)
+            )
+    solution = a_star(start)
+
+    if solution:
+        print("Solution found")
+        print("Number of moves ", len(solution) - 1)
+
+        for step, state in enumerate(solution):
+            print("Steps: ", step)
+            for row in state:
+                print(row)
+    else:
+        print("No solution found")
+
+
+
+    pass
+
+if __name__ == "__main__":
+    main()
+
